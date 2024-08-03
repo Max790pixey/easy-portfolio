@@ -1,0 +1,86 @@
+using System;
+using UnityEngine;
+
+public class PlayerController : MonoBehaviour
+{
+    public float moveSpeed = 5f;
+    public float shootRange = 10f;
+    public Transform gunTransform;
+    public GameObject bulletPrefab;
+
+    private void Update()
+    {
+        // Movimentação do jogador
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
+        Vector3 moveDirection = new Vector3(horizontal, 0, vertical).normalized;
+        transform.Translate(moveDirection * moveSpeed * Time.deltaTime, Space.World);
+
+        // Rotacionar o jogador para a direção do movimento
+        if (moveDirection != Vector3.zero)
+        {
+            transform.forward = moveDirection;
+        }
+
+        // Atirar
+        if (Input.GetButtonDown("Fire1"))
+        {
+            Shoot();
+        }
+    }
+
+    private void Shoot()
+    {
+        GameObject bullet = Instantiate(bulletPrefab, gunTransform.position, gunTransform.rotation);
+        Rigidbody bulletRb = bullet.GetComponent<Rigidbody>();
+        bulletRb.AddForce(gunTransform.forward * 500f);
+    }
+}
+
+public class EnemyController : MonoBehaviour
+{
+    public float moveSpeed = 3f;
+    public float detectionRange = 15f;
+    public Transform playerTransform;
+
+    private void Update()
+    {
+        // Detectar o jogador
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+        if (distanceToPlayer <= detectionRange)
+        {
+            // Movimentar em direção ao jogador
+            Vector3 moveDirection = (playerTransform.position - transform.position).normalized;
+            transform.Translate(moveDirection * moveSpeed * Time.deltaTime, Space.World);
+
+            // Rotacionar o inimigo para a direção do movimento
+            transform.forward = moveDirection;
+        }
+    }
+}
+
+public class Bullet : MonoBehaviour
+{
+    public float lifeTime = 2f;
+    public float damage = 10f;
+
+    private void Start()
+    {
+        Destroy(gameObject, lifeTime);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            // Aplicar dano ao inimigo
+            EnemyController enemy = collision.gameObject.GetComponent<EnemyController>();
+            if (enemy != null)
+            {
+                // Exemplo de como aplicar dano. Isso depende de como a saúde do inimigo é gerenciada.
+                // enemy.TakeDamage(damage);
+                Destroy(gameObject);
+            }
+        }
+    }
+}
